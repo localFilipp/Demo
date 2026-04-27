@@ -14,9 +14,40 @@ PLAYER_VELOCITY = 5
 
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 
+def flip(sprites): #keerab spritei ühele v teisele poole vaatama
+    return [pygame.transform.flip(sprite, True, False) for sprite in sprites]
+
+def load_sprite_sheets(dir1, dir2, width, height, direction=False):
+    path = join("assets", dir1, dir2)
+    images = [f for f in listdir(path) if isfile(join(path, f))] # laeb kõik failid
+
+    all_sprites = {}
+
+    for image in images:
+        sprite_sheet = pygame.image.load(join(path, image)).convert_alpha() # laeb teele jääva image? ja paneb transparent backgroundi
+
+        sprites = []
+
+        for i in range(sprite_sheet.get_width() // width): # loob surfacei kus peal animatsioon liikuma hakkab ja mida omakorda liigutada saab
+            surface = pygame.Surface((width, height), pygame.SRCALPHA)
+            rect = pygame.Rect(i * width, 0, width, height) # i on surfacei asukoht ekraanil
+            surface.blit(sprite_sheet, (0, 0), rect) # joonistab raamid?
+            sprites.append(surface)
+
+        if direction:
+            all_sprites[image.replace(".png", "") + "_left"] = sprites
+            all_sprites[image.replace(".png", "") + "_right"] = flip(sprites)
+        else:
+            all_sprites[image.replace(".png", "")] = sprites
+
+    return all_sprites
+
 
 class Player(pygame.sprite.Sprite):
     COLOR = (255, 0, 0)
+    SPRITES = load_sprite_sheets("Characters", "kiisu", 64, 64, True)
+    ANIMATION_DELAY = 5
+    GRAVITY = 1
 
     def __init__(self, x, y, width, height):
         self.rect = pygame.Rect(x, y, width, height)
@@ -25,6 +56,15 @@ class Player(pygame.sprite.Sprite):
         self.mask = None
         self.direction = "left"
         self.animation_count = 0
+        self.jump_count = 0
+        self.fall_count = 0
+
+    def jump(self):
+        self.y_vel = -self.GRAVITY * 8
+        self.animation_count = 0
+        self.jump_count += 1
+        if self.jump_count == 1:
+            self.fall_count = 0
 
     def move(self, dx, dy):
         self.rect.x += dx
@@ -43,11 +83,25 @@ class Player(pygame.sprite.Sprite):
             self.animation_count = 0
 
     def loop(self, fps):
+        self.y_vel += min(1, (self.fall_count / fps) * self.GRAVITY, self.GRAVITY)
         self.move(self.x_vel, self.y_vel)
 
-    def draw(self, win):
-        pygame.draw.rect(win, self.COLOR, self.rect)
+        self.fall_count += 1
+        self.update_sprite()
 
+    def update_sprite(self):
+        sprite_sheet = "kiisu_idle"
+        if self.x_vel != 0:
+            sprite_sheet = "sprite_walk"
+
+        sprite_sheet_name = sprite_sheet + "_" + self.direction
+        sprites = self.SPRITES[sprite_sheet_name]
+        sprite_index = (self.animation_count // self.ANIMATION_DELAY) % len(sprites)
+        self.sprite = sprites[sprite_index]
+        self.animation_count += 1
+
+    def draw(self, win):
+        win.blit(self.sprite, (self.rect.x, self.rect.y))
 
 def get_background(name):
     image = pygame.image.load(join("assets", "background", name))
@@ -93,6 +147,9 @@ def main(window):
             if event.type == pygame.QUIT:
                 run = False
                 break
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE and player.jump_count < 2:
+                    player.jump()
 
         player.loop(FPS)
         handle_move(player)
