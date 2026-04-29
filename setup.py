@@ -50,6 +50,8 @@ class Player(pygame.sprite.Sprite):
     GRAVITY = 1
 
     def __init__(self, x, y, width, height):
+        super. __init__()
+        
         self.rect = pygame.Rect(x, y, width, height)
         self.x_vel = 0
         self.y_vel = 0
@@ -102,6 +104,31 @@ class Player(pygame.sprite.Sprite):
 
     def draw(self, win):
         win.blit(self.sprite, (self.rect.x, self.rect.y))
+
+def update():
+        self.rect = self.sprite.get_rect(topleft=(self.rect.x, self.rect.y))
+        self.mask = pygame.mask.from_surface(self.sprite)  # self.mask ütleb kus kohas spritei pinnal on pikslid
+
+    def draw(self, win):
+        win.blit(self.sprite, (self.rect.x, self.rect.y))
+
+class Object(pygame.sprite.Sprite):
+    def __init__(self, x, y, width, height, name=None):
+        super.__init__()
+        self.rect = pygame.Rect(x, y, width, height)
+        self.image = pygame.Surface((width, height), pygame.SRCALPHA)
+        self.width = width
+        self.height = height
+        self.name = name
+
+    def draw(self, win):
+        win.blit(self.image, (self.rect.x, self.rect.y))
+
+class Block(Object):
+    def __init__(self, x, y, size, size):
+        super().__init__()
+        self.image.blit(block,(0, 0))
+        self.mask = pygame.mask.from_surface(self.image)
 
 def get_background(name):
     image = pygame.image.load(join("assets", "background", name))
