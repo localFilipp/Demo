@@ -102,9 +102,6 @@ class Player(pygame.sprite.Sprite):
         self.sprite = sprites[sprite_index]
         self.animation_count += 1
 
-    def draw(self, win):
-        win.blit(self.sprite, (self.rect.x, self.rect.y))
-
     def update():
         self.rect = self.sprite.get_rect(topleft=(self.rect.x, self.rect.y))
         self.mask = pygame.mask.from_surface(self.sprite)  # self.mask ütleb kus kohas spritei pinnal on pikslid
@@ -125,8 +122,9 @@ class Object(pygame.sprite.Sprite):
         win.blit(self.image, (self.rect.x, self.rect.y))
 
 class Block(Object):
-    def __init__(self, x, y, size, size):
-        super().__init__()
+    def __init__(self, x, y, size):
+        super().__init__(x, y, size, size)
+        block = load_block(size)
         self.image.blit(block,(0, 0))
         self.mask = pygame.mask.from_surface(self.image)
 
