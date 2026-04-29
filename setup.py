@@ -105,7 +105,7 @@ class Player(pygame.sprite.Sprite):
     def draw(self, win):
         win.blit(self.sprite, (self.rect.x, self.rect.y))
 
-def update():
+    def update():
         self.rect = self.sprite.get_rect(topleft=(self.rect.x, self.rect.y))
         self.mask = pygame.mask.from_surface(self.sprite)  # self.mask ütleb kus kohas spritei pinnal on pikslid
 
