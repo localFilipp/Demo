@@ -149,6 +149,11 @@ class Fire(Object):
     def __init__(self, x, y, width, height):
         super().__init__(x, y, width, height, "fire")
         self.fire = load_sprite_sheets("Traps", "Fire", width, height)
+        for animation in self.fire:
+            self.fire[animation] = [
+                pygame.transform.scale(sprite, (width * 2.5, height * 2.5))
+                for sprite in self.fire[animation]
+            ]
         self.image = self.fire["off"][0]
         self.mask = pygame.mask.from_surface(self.image)
         self.animation_count = 0
@@ -189,12 +194,15 @@ def get_background(name):
 
     return tiles, image
 
-def draw(window, background, bg_image, player, objects, portal, offset_x):
+def draw(window, background, bg_image, player, objects, portal, offset_x, lives, heart_img):
     for tile in background:
         window.blit(bg_image, tile)
 
     for obj in objects:
         obj.draw(window, offset_x)
+
+    for i in range(lives):
+        window.blit(heart_img, (20 + i * 35, 20))
 
     portal.draw(window, offset_x)
     player.draw(window, offset_x)
@@ -248,14 +256,50 @@ def main(window):
 
     block_size = 64
 
-    player = Player(100,100, 50, 50)
-    fire = Fire(100, HEIGHT - block_size - 64, 16, 32)
+    start_x = 100
+    start_y = 100
+    player = Player(start_x, start_y, 50, 50)
+    lives = 3
+
+    heart_img = pygame.image.load("assets/UI/PixelHeart.png").convert_alpha()
+    heart_img = pygame.transform.scale(heart_img, (30, 30))
+
+    #fire objects
+    fire = Fire(300, HEIGHT - block_size - 64, 16, 32)
+    fire1 = Fire(500, HEIGHT - block_size - 64, 16, 32)
+    fire2 = Fire(1250, HEIGHT - block_size - 64 * 4, 16, 32)
+
     fire.on()
+    fire1.on()
+    fire2.on()
 
-    portal = Portal(800, HEIGHT - block_size - 64, 40, 64)
+    portal = Portal(3050, HEIGHT - block_size - 64 * 3, 40, 64)
 
-    floor = [Block(i * block_size, HEIGHT - block_size, block_size) for i in range(-WIDTH // block_size, WIDTH * 2 // block_size)]
-    objects = [*floor, Block(0, HEIGHT - block_size * 2, block_size), Block(block_size * 3, HEIGHT - block_size * 4, block_size), fire]
+    floor = [
+        Block(i * block_size, HEIGHT - block_size, block_size)
+        for i in range(-WIDTH // block_size, WIDTH * 2 // block_size)
+        if not (10 <= i <= 25) and not (-10 <= i <= -1)
+    ]
+    objects = [
+        *floor,
+        Block(block_size * 3, HEIGHT - block_size * 4, block_size),
+        Block(block_size * 4, HEIGHT - block_size * 4, block_size),
+        Block(block_size * 11, HEIGHT - block_size * 4, block_size),
+        Block(block_size * 14, HEIGHT - block_size * 5, block_size),
+        Block(block_size * 18, HEIGHT - block_size * 4, block_size),
+        Block(block_size * 19, HEIGHT - block_size * 4, block_size),
+        Block(block_size * 20, HEIGHT - block_size * 4, block_size),
+        Block(block_size * 24, HEIGHT - block_size * 6, block_size),
+        Block(block_size * 34, HEIGHT - block_size * 2, block_size),
+        Block(block_size * 38, HEIGHT - block_size * 1, block_size),
+        Block(block_size * 43, HEIGHT - block_size * 3, block_size),
+        Block(block_size * 46, HEIGHT - block_size * 3, block_size),
+        Block(block_size * 47, HEIGHT - block_size * 3, block_size),
+        Block(block_size * 48, HEIGHT - block_size * 3, block_size),
+        fire,
+        fire1,
+        fire2,
+    ]
 
     offset_x = 0
     scroll_area_width = 200
@@ -275,13 +319,41 @@ def main(window):
 
         player.loop(FPS)
         fire.loop()
+        fire1.loop()
+        fire2.loop()
         handle_move(player, objects)
+
+        fires = [fire, fire1, fire2]
+
+        for f in fires:
+            if player.rect.colliderect(f.rect):
+                lives -= 1
+
+                player.rect.x = start_x
+                player.rect.y = start_y
+
+                player.x_vel = 0
+                player.y_vel = 0
+                player.fall_count = 0
+                player.jump_count = 0
+
+                offset_x = 0
+
+                pygame.time.delay(100)
 
         if pygame.sprite.collide_mask(player, portal):
             print("MÄNG VÕIDETUD!")
             run = False
 
-        draw(window, background, bg_image, player, objects, portal, offset_x)
+        if player.rect.top > HEIGHT:
+            print("GAME OVER")
+            run = False
+
+        if lives <= 0:
+            print("GAME OVER - no lives left")
+            run = False
+
+        draw(window, background, bg_image, player, objects, portal, offset_x, lives, heart_img)
 
         if won:
             font = pygame.font.SysFont("arial", 60)
