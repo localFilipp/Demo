@@ -365,7 +365,7 @@ def main(window):
             offset_x += player.x_vel
 
     pygame.quit()
-    quit()
+    quit() #gello
 
 if __name__ == '__main__':
     main(window)
